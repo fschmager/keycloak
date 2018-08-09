@@ -23,6 +23,7 @@ import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
+import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
@@ -101,6 +102,9 @@ public class KeycloakAuthenticationProcessingFilterTest {
     @Mock
     private KeycloakSecurityContext keycloakSecurityContext;
 
+    @Mock
+    private NodesRegistrationManagement nodesRegistrationManagement;
+
     private final List<? extends GrantedAuthority> authorities = Collections.singletonList(new KeycloakRole("ROLE_USER"));
 
     @Before
@@ -113,6 +117,7 @@ public class KeycloakAuthenticationProcessingFilterTest {
         filter.setApplicationContext(applicationContext);
         filter.setAuthenticationSuccessHandler(successHandler);
         filter.setAuthenticationFailureHandler(failureHandler);
+        filter.setNodesRegistrationManagement(nodesRegistrationManagement);
 
         when(applicationContext.getBean(eq(AdapterDeploymentContext.class))).thenReturn(adapterDeploymentContext);
         when(adapterDeploymentContext.resolveDeployment(any(HttpFacade.class))).thenReturn(keycloakDeployment);
@@ -121,6 +126,13 @@ public class KeycloakAuthenticationProcessingFilterTest {
 
 
         filter.afterPropertiesSet();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        verify(nodesRegistrationManagement).tryRegister(keycloakDeployment);
+        filter.destroy();
+        verify(nodesRegistrationManagement).stop();
     }
 
     @Test
