@@ -89,7 +89,7 @@ public class KeycloakAuthenticationProcessingFilterTest {
 
     @Mock
     private AuthenticationFailureHandler failureHandler;
-    
+
     private KeycloakAuthenticationFailureHandler keycloakFailureHandler;
 
     @Mock
@@ -129,7 +129,6 @@ public class KeycloakAuthenticationProcessingFilterTest {
 
     @After
     public void tearDown() throws Exception {
-        verify(nodesRegistrationManagement).tryRegister(keycloakDeployment);
         filter.destroy();
         verify(nodesRegistrationManagement).stop();
     }
@@ -145,12 +144,14 @@ public class KeycloakAuthenticationProcessingFilterTest {
         filter.attemptAuthentication(request, response);
         verify(response).setStatus(302);
         verify(response).setHeader(eq("Location"), startsWith("http://localhost:8080/auth"));
+        verify(nodesRegistrationManagement).tryRegister(keycloakDeployment);
     }
 
     @Test(expected = KeycloakAuthenticationException.class)
     public void testAttemptAuthenticationWithInvalidToken() throws Exception {
         request.addHeader("Authorization", "Bearer xxx");
         filter.attemptAuthentication(request, response);
+        verify(nodesRegistrationManagement).tryRegister(keycloakDeployment);
     }
 
     @Test(expected = KeycloakAuthenticationException.class)
@@ -158,6 +159,7 @@ public class KeycloakAuthenticationProcessingFilterTest {
         when(keycloakDeployment.isBearerOnly()).thenReturn(Boolean.TRUE);
         request.addHeader("Authorization", "Bearer xxx");
         filter.attemptAuthentication(request, response);
+        verify(nodesRegistrationManagement).tryRegister(keycloakDeployment);
     }
 
     @Test
@@ -215,13 +217,13 @@ public class KeycloakAuthenticationProcessingFilterTest {
         verify(failureHandler).onAuthenticationFailure(any(HttpServletRequest.class), any(HttpServletResponse.class),
                 any(AuthenticationException.class));
     }
-    
+
     @Test
     public void testDefaultFailureHanlder() throws Exception {
         AuthenticationException exception = new BadCredentialsException("OOPS");
         filter.setAuthenticationFailureHandler(keycloakFailureHandler);
         filter.unsuccessfulAuthentication(request, response, exception);
-        
+
         verify(response).sendError(eq(HttpServletResponse.SC_UNAUTHORIZED), any(String.class));
     }
 
