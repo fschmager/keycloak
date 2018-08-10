@@ -17,6 +17,7 @@
 
 package org.keycloak.adapters.springsecurity.filter;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.KeycloakPrincipal;
@@ -51,8 +52,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
