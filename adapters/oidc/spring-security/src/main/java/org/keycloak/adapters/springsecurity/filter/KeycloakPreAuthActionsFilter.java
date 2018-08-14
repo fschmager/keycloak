@@ -77,6 +77,7 @@ public class KeycloakPreAuthActionsFilter extends GenericFilterBean implements A
             throws IOException, ServletException {
 
         HttpFacade facade = new SimpleHttpFacade((HttpServletRequest)request, (HttpServletResponse)response);
+        management.tryRegister(deploymentContext.resolveDeployment(facade));
         PreAuthActionsHandler handler = new PreAuthActionsHandler(userSessionManagement, deploymentContext, facade);
         if (handler.handleRequest()) {
             log.debug("Pre-auth filter handled request: {}", ((HttpServletRequest) request).getRequestURI());
