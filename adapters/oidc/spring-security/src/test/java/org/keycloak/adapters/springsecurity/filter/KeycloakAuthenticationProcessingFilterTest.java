@@ -17,14 +17,12 @@
 
 package org.keycloak.adapters.springsecurity.filter;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.keycloak.KeycloakPrincipal;
 import org.keycloak.KeycloakSecurityContext;
 import org.keycloak.adapters.AdapterDeploymentContext;
 import org.keycloak.adapters.KeycloakDeployment;
-import org.keycloak.adapters.NodesRegistrationManagement;
 import org.keycloak.adapters.OidcKeycloakAccount;
 import org.keycloak.adapters.spi.HttpFacade;
 import org.keycloak.adapters.springsecurity.KeycloakAuthenticationException;
@@ -52,6 +50,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
@@ -89,7 +89,7 @@ public class KeycloakAuthenticationProcessingFilterTest {
 
     @Mock
     private AuthenticationFailureHandler failureHandler;
-
+    
     private KeycloakAuthenticationFailureHandler keycloakFailureHandler;
 
     @Mock
@@ -100,9 +100,6 @@ public class KeycloakAuthenticationProcessingFilterTest {
 
     @Mock
     private KeycloakSecurityContext keycloakSecurityContext;
-
-    @Mock
-    private NodesRegistrationManagement nodesRegistrationManagement;
 
     private final List<? extends GrantedAuthority> authorities = Collections.singletonList(new KeycloakRole("ROLE_USER"));
 
@@ -116,7 +113,6 @@ public class KeycloakAuthenticationProcessingFilterTest {
         filter.setApplicationContext(applicationContext);
         filter.setAuthenticationSuccessHandler(successHandler);
         filter.setAuthenticationFailureHandler(failureHandler);
-        filter.setNodesRegistrationManagement(nodesRegistrationManagement);
 
         when(applicationContext.getBean(eq(AdapterDeploymentContext.class))).thenReturn(adapterDeploymentContext);
         when(adapterDeploymentContext.resolveDeployment(any(HttpFacade.class))).thenReturn(keycloakDeployment);
@@ -125,12 +121,6 @@ public class KeycloakAuthenticationProcessingFilterTest {
 
 
         filter.afterPropertiesSet();
-    }
-
-    @After
-    public void tearDown() throws Exception {
-        filter.destroy();
-        verify(nodesRegistrationManagement).stop();
     }
 
     @Test
@@ -144,14 +134,12 @@ public class KeycloakAuthenticationProcessingFilterTest {
         filter.attemptAuthentication(request, response);
         verify(response).setStatus(302);
         verify(response).setHeader(eq("Location"), startsWith("http://localhost:8080/auth"));
-        verify(nodesRegistrationManagement).tryRegister(keycloakDeployment);
     }
 
     @Test(expected = KeycloakAuthenticationException.class)
     public void testAttemptAuthenticationWithInvalidToken() throws Exception {
         request.addHeader("Authorization", "Bearer xxx");
         filter.attemptAuthentication(request, response);
-        verify(nodesRegistrationManagement).tryRegister(keycloakDeployment);
     }
 
     @Test(expected = KeycloakAuthenticationException.class)
@@ -159,7 +147,6 @@ public class KeycloakAuthenticationProcessingFilterTest {
         when(keycloakDeployment.isBearerOnly()).thenReturn(Boolean.TRUE);
         request.addHeader("Authorization", "Bearer xxx");
         filter.attemptAuthentication(request, response);
-        verify(nodesRegistrationManagement).tryRegister(keycloakDeployment);
     }
 
     @Test
@@ -217,13 +204,13 @@ public class KeycloakAuthenticationProcessingFilterTest {
         verify(failureHandler).onAuthenticationFailure(any(HttpServletRequest.class), any(HttpServletResponse.class),
                 any(AuthenticationException.class));
     }
-
+    
     @Test
     public void testDefaultFailureHanlder() throws Exception {
         AuthenticationException exception = new BadCredentialsException("OOPS");
         filter.setAuthenticationFailureHandler(keycloakFailureHandler);
         filter.unsuccessfulAuthentication(request, response, exception);
-
+        
         verify(response).sendError(eq(HttpServletResponse.SC_UNAUTHORIZED), any(String.class));
     }
 
