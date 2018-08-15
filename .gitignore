@@ -8,9 +8,8 @@
 .project
 .settings
 .classpath
-bin
 .factorypath
-
+bin/
 
 # NetBeans #
 ############
